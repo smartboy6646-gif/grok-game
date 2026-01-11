@@ -3,32 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Shut the Box Online - Pro</title>
+    <title>Shut the Box Online - Glow Edition</title>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
     <style>
-        :root { --p1: #ff4757; --p2: #f1c40f; --bg: #121212; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; text-align: center; margin: 0; touch-action: manipulation; }
+        :root { --p1: #ff4757; --p2: #f1c40f; --bg: #0f0f0f; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; text-align: center; margin: 0; overflow: hidden; }
         
+        /* Login Screen */
         #login-screen { position: fixed; inset: 0; background: var(--bg); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        input { padding: 15px; margin: 10px; width: 80%; max-width: 300px; border-radius: 10px; border: none; font-size: 16px; }
+        input { padding: 15px; margin: 10px; width: 80%; max-width: 300px; border-radius: 10px; border: none; font-size: 16px; background: #222; color: #fff; border: 1px solid #444; }
 
+        /* Board Styling */
         .board { display: flex; flex-direction: column; justify-content: space-between; height: 100vh; padding: 10px; box-sizing: border-box; }
-        .card-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; max-width: 400px; margin: 0 auto; }
+        .card-row { 
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; 
+            max-width: 400px; margin: 0 auto; padding: 15px; border-radius: 15px; 
+            transition: 0.5s; border: 2px solid transparent;
+        }
         
-        .card { height: 75px; background: #fff; color: #000; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 24px; box-shadow: 0 5px #bbb; transition: 0.2s; }
+        /* GLOW EFFECTS */
+        .glow-p1 { border-color: var(--p1); box-shadow: 0 0 20px rgba(255, 71, 87, 0.4); background: rgba(255, 71, 87, 0.05); }
+        .glow-p2 { border-color: var(--p2); box-shadow: 0 0 20px rgba(241, 196, 15, 0.4); background: rgba(241, 196, 15, 0.05); }
+
+        .card { height: 75px; background: #fff; color: #000; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 24px; box-shadow: 0 5px #bbb; transition: 0.3s; }
         .p1 .card { background: var(--p1); color: white; }
         .p2 .card { background: var(--p2); color: #000; }
         
-        .selected { transform: translateY(-8px); border: 4px solid #00ff00; box-shadow: 0 0 20px #00ff00; }
+        .selected { transform: translateY(-10px); border: 3px solid #fff; box-shadow: 0 0 15px #fff; }
         .shut { opacity: 0.05 !important; transform: scale(0.8); pointer-events: none; }
 
-        .dice { display: inline-block; width: 70px; height: 70px; background: white; color: black; border-radius: 15px; font-size: 50px; line-height: 70px; margin: 10px; box-shadow: 0 6px #ddd; position: relative; }
+        /* Middle UI */
+        .center-ui { padding: 10px; }
+        .dice { display: inline-block; width: 70px; height: 70px; background: white; color: black; border-radius: 15px; font-size: 50px; line-height: 70px; margin: 10px; box-shadow: 0 6px #ddd; }
         .rolling { animation: shake 0.1s infinite; }
         @keyframes shake { 0% { transform: rotate(5deg); } 50% { transform: rotate(-5deg); } 100% { transform: rotate(5deg); } }
 
-        #roll-btn { background: #3498db; color: white; padding: 15px 40px; border-radius: 40px; border: none; font-size: 20px; font-weight: bold; cursor: pointer; }
-        #roll-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        #roll-btn { background: #3498db; color: white; padding: 15px 45px; border-radius: 40px; border: none; font-size: 20px; font-weight: bold; cursor: pointer; box-shadow: 0 5px #2980b9; }
+        #roll-btn:disabled { opacity: 0.2; cursor: not-allowed; box-shadow: none; transform: translateY(3px); }
 
         #win-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 200; flex-direction: column; align-items: center; justify-content: center; }
     </style>
@@ -37,15 +49,15 @@
 
 <div id="login-screen">
     <h2>🎲 Shut the Box Online</h2>
-    <input type="text" id="user-name" placeholder="Tapai ko Name">
-    <input type="text" id="room-id" placeholder="Room ID">
-    <button onclick="joinGame()" style="padding:15px 40px; background:#2ecc71; border:none; border-radius:10px; color:white; font-weight:bold; cursor:pointer;">START GAME</button>
+    <input type="text" id="user-name" placeholder="Pahila Name Lekhnu">
+    <input type="text" id="room-id" placeholder="Room ID (e.g. 111)">
+    <button onclick="joinGame()" style="padding:15px 40px; background:#2ecc71; border:none; border-radius:10px; color:white; font-weight:bold; cursor:pointer; margin-top:10px;">ROOM MA XIRNE</button>
 </div>
 
 <div id="win-overlay">
     <div style="background:#222; padding:40px; border-radius:20px; border:3px solid #00ff00;">
         <h1 id="winner-name" style="color:#00ff00;">WINNER!</h1>
-        <button onclick="location.reload()" style="padding:10px 20px; border-radius:10px; border:none; cursor:pointer;">NEW GAME</button>
+        <button onclick="location.reload()" style="padding:10px 20px; border-radius:10px; border:none; cursor:pointer;">FERI KHELNE</button>
     </div>
 </div>
 
@@ -53,12 +65,12 @@
     <div id="p2-area" class="card-row p2"></div>
 
     <div class="center-ui">
-        <div id="status" style="font-size:1.1rem; color:#2ecc71; margin-bottom:5px;">Connecting...</div>
+        <div id="status" style="font-size:1.1rem; color:#2ecc71; height:30px; margin-bottom:5px;">Connecting...</div>
         <div id="dice-container">
             <div id="d1" class="dice">⚀</div>
             <div id="d2" class="dice">⚀</div>
         </div>
-        <p>Target: <span id="target">0</span> | Total: <span id="sum">0</span></p>
+        <p style="margin:5px 0;">Target: <b id="target">0</b> | Selected: <b id="sum">0</b></p>
         <button id="roll-btn" onclick="roll()">ROLL</button>
     </div>
 
@@ -68,7 +80,7 @@
 <audio id="dice-sound" src="https://cdn.discordapp.com/attachments/1420003318096461825/1459851313398546472/dice-roll-sound.mp3?ex=6964c7fb&is=6963767b&hm=1203edb109f203488d0270c0ca850004232fb9dfc79017557facab533008367d&"></audio>
 
 <script>
-    // Firebase Config (Yasma tapai ko details halnuhos)
+    // FIREBASE SETUP: Replace with your own config
     const firebaseConfig = { apiKey: "AIzaSyDKKAxKTFJcMDmj6j21nKHwlSpwAxsw57k",
   authDomain: "call-breke.firebaseapp.com",
   databaseURL: "https://call-breke-default-rtdb.firebaseio.com",
@@ -84,7 +96,7 @@
     function joinGame() {
         myName = document.getElementById('user-name').value;
         roomID = document.getElementById('room-id').value;
-        if(!myName || !roomID) return alert("Fill all fields!");
+        if(!myName || !roomID) return alert("Details halnuhos!");
         
         db = firebase.database().ref('rooms/' + roomID);
         document.getElementById('login-screen').style.display = 'none';
@@ -109,33 +121,31 @@
         });
     }
 
-function handleGameState(data) {
+    function handleGameState(data) {
         const pCount = data.players_count || 0;
+        const rollBtn = document.getElementById('roll-btn');
         
-        // 1. Waiting for 2 Players
         if(pCount < 2) {
-            document.getElementById('status').innerText = "Waiting for Player 2 to join...";
-            document.getElementById('roll-btn').disabled = true;
+            document.getElementById('status').innerText = "Waiting for Player 2...";
+            rollBtn.disabled = true;
             return;
         }
 
-        // 2. Turn Decider (Toss)
+        // TOSS PHASE
         if(!data.gameStarted) {
             const p1Toss = data.toss_p1 || 0;
             const p2Toss = data.toss_p2 || 0;
 
             if (p1Toss === 0 && p2Toss === 0) {
                 document.getElementById('status').innerText = "Toss: Player 1 Roll garnuhos!";
-                document.getElementById('roll-btn').disabled = (myRole !== 1);
+                rollBtn.disabled = (myRole !== 1);
             } else if (p1Toss > 0 && p2Toss === 0) {
-                document.getElementById('status').innerText = "P1 rolled " + p1Toss + ". Aba Player 2 ko palo!";
-                document.getElementById('roll-btn').disabled = (myRole !== 2);
+                document.getElementById('status').innerText = "Player 2 ko palo (Toss)!";
+                rollBtn.disabled = (myRole !== 2);
             } else if (p1Toss > 0 && p2Toss > 0) {
                 const winner = p1Toss >= p2Toss ? 1 : 2;
-                document.getElementById('status').innerText = `Toss Done! P1: ${p1Toss}, P2: ${p2Toss}. Starter: Player ${winner}`;
-                document.getElementById('roll-btn').disabled = true;
-                
-                // Only Player 1 will trigger the game start to avoid double-triggering
+                document.getElementById('status').innerText = `Toss Winner: Player ${winner}! Game Suru...`;
+                rollBtn.disabled = true;
                 if(myRole === 1) {
                     setTimeout(() => {
                         db.update({ gameStarted: true, turn: winner, target: 0, p1_shut: "", p2_shut: "", toss_p1: null, toss_p2: null });
@@ -143,22 +153,26 @@ function handleGameState(data) {
                 }
             }
             return;
-        }   
-        // 3. Main Game Logic
+        }
+
+        // GAME PHASE
         const isMyTurn = data.turn === myRole;
-        document.getElementById('status').innerText = isMyTurn ? "Your Turn!" : "Opponent Turn...";
-        document.getElementById('roll-btn').disabled = !isMyTurn || data.target > 0;
+        document.getElementById('status').innerText = isMyTurn ? "TAPAI KO PALO!" : "Opponent Turn......";
+        rollBtn.disabled = !isMyTurn || data.target > 0;
         document.getElementById('target').innerText = data.target;
+
+        // GLOW EFFECT BASED ON TURN
+        document.getElementById('p1-area').className = "card-row p1 " + (data.turn === 1 ? "glow-p1" : "");
+        document.getElementById('p2-area').className = "card-row p2 " + (data.turn === 2 ? "glow-p2" : "");
 
         document.getElementById('d1').innerText = emojis[(data.d1 || 1)-1];
         document.getElementById('d2').innerText = emojis[(data.d2 || 1)-1];
 
         [1,2].forEach(p => {
             const shutArr = (data[`p${p}_shut`] || "").split(',').filter(x => x);
-            if(shutArr.length === 12 && data.gameStarted) {
+            if(shutArr.length === 12) {
                 document.getElementById('win-overlay').style.display = 'flex';
                 document.getElementById('winner-name').innerText = "PLAYER " + p + " WINS!";
-                return;
             }
             for(let i=1; i<=12; i++) {
                 const el = document.getElementById(`p${p}-c-${i}`);
@@ -170,34 +184,24 @@ function handleGameState(data) {
         if(isMyTurn && data.target > 0) checkPass(data);
     }
 
-   function roll() {
-        const dSound = document.getElementById('dice-sound');
-        if(dSound) dSound.play();
-        
-        document.getElementById('d1').classList.add('rolling');
-        document.getElementById('d2').classList.add('rolling');
-        document.getElementById('roll-btn').disabled = true;
+    function roll() {
+        document.getElementById('dice-sound').play();
+        const d1 = document.getElementById('d1'); const d2 = document.getElementById('d2');
+        d1.classList.add('rolling'); d2.classList.add('rolling');
 
         setTimeout(() => {
             const v1 = Math.floor(Math.random() * 6) + 1;
             const v2 = Math.floor(Math.random() * 6) + 1;
-            const total = v1 + v2;
+            d1.classList.remove('rolling'); d2.classList.remove('rolling');
             
-            document.getElementById('d1').classList.remove('rolling');
-            document.getElementById('d2').classList.remove('rolling');
-
             db.once('value', s => {
                 const data = s.val() || {};
-                if(!data.gameStarted) {
-                    // Toss Phase
-                    db.update({ [`toss_p${myRole}`]: total, d1: v1, d2: v2 });
-                } else {
-                    // Normal Game Phase
-                    db.update({ d1: v1, d2: v2, target: total });
-                }
+                if(!data.gameStarted) db.update({ [`toss_p${myRole}`]: v1+v2, d1: v1, d2: v2 });
+                else db.update({ d1: v1, d2: v2, target: v1+v2 });
             });
         }, 800);
     }
+
     function selectCard(p, n) {
         if(p !== myRole) return;
         const el = document.getElementById(`p${p}-c-${n}`);
@@ -205,14 +209,13 @@ function handleGameState(data) {
 
         el.classList.toggle('selected');
         const sel = document.querySelectorAll(`.p${myRole} .selected`);
-        let sum = 0, nums = [];
-        sel.forEach(c => { sum += parseInt(c.innerText); nums.push(c.innerText); });
-        document.getElementById('sum').innerText = sum;
+        let currentSum = 0; let nums = [];
+        sel.forEach(c => { currentSum += parseInt(c.innerText); nums.push(c.innerText); });
+        document.getElementById('sum').innerText = currentSum;
 
         db.once('value', s => {
-            if(sum === s.val().target && s.val().target > 0) {
-                setTimeout(() => finalizeMove(nums), 300);
-            }
+            const target = s.val().target;
+            if(currentSum === target && target > 0) setTimeout(() => finalizeMove(nums), 300);
         });
     }
 
@@ -228,9 +231,7 @@ function handleGameState(data) {
 
     function checkPass(data) {
         let available = [];
-        for(let i=1; i<=12; i++) {
-            if(!document.getElementById(`p${myRole}-c-${i}`).classList.contains('shut')) available.push(i);
-        }
+        for(let i=1; i<=12; i++) if(!document.getElementById(`p${myRole}-c-${i}`).classList.contains('shut')) available.push(i);
         const canWork = (arr, n, target) => {
             if (target == 0) return true;
             if (n == 0) return false;
@@ -238,7 +239,7 @@ function handleGameState(data) {
             return canWork(arr, n - 1, target) || canWork(arr, n - 1, target - arr[n - 1]);
         };
         if(!canWork(available, available.length, data.target)) {
-            setTimeout(() => { db.update({ target: 0, turn: myRole === 1 ? 2 : 1 }); }, 2500);
+            setTimeout(() => db.update({ target: 0, turn: myRole === 1 ? 2 : 1 }), 2500);
         }
     }
 </script>
