@@ -3,85 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Shut the Box Online - Glow Edition</title>
+    <title>Shut the Box - 10 Cards Edition</title>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
     <style>
         :root { --p1: #ff4757; --p2: #f1c40f; --bg: #0f0f0f; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; text-align: center; margin: 0; overflow: hidden; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; text-align: center; margin: 0; overflow: hidden; touch-action: manipulation; }
         
-        /* Login Screen */
         #login-screen { position: fixed; inset: 0; background: var(--bg); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         input { padding: 15px; margin: 10px; width: 80%; max-width: 300px; border-radius: 10px; border: none; font-size: 16px; background: #222; color: #fff; border: 1px solid #444; }
 
-        /* Board Styling */
         .board { display: flex; flex-direction: column; justify-content: space-between; height: 100vh; padding: 10px; box-sizing: border-box; }
         .card-row { 
-            display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; 
-            max-width: 400px; margin: 0 auto; padding: 15px; border-radius: 15px; 
+            display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; 
+            max-width: 400px; margin: 0 auto; padding: 12px; border-radius: 15px; 
             transition: 0.5s; border: 2px solid transparent;
         }
         
-        /* GLOW EFFECTS */
         .glow-p1 { border-color: var(--p1); box-shadow: 0 0 20px rgba(255, 71, 87, 0.4); background: rgba(255, 71, 87, 0.05); }
         .glow-p2 { border-color: var(--p2); box-shadow: 0 0 20px rgba(241, 196, 15, 0.4); background: rgba(241, 196, 15, 0.05); }
 
-        .card { height: 75px; background: #fff; color: #000; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 24px; box-shadow: 0 5px #bbb; transition: 0.3s; }
+        .card { height: 70px; background: #fff; color: #000; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 22px; box-shadow: 0 4px #bbb; transition: 0.2s; }
         .p1 .card { background: var(--p1); color: white; }
         .p2 .card { background: var(--p2); color: #000; }
-        
-        .selected { transform: translateY(-10px); border: 3px solid #fff; box-shadow: 0 0 15px #fff; }
-        .shut { opacity: 0.05 !important; transform: scale(0.8); pointer-events: none; }
+        .selected { transform: translateY(-8px); border: 3px solid #fff; box-shadow: 0 0 15px #fff; }
+        .shut { opacity: 0.05 !important; transform: scale(0.85); pointer-events: none; }
 
-        /* Middle UI */
-        .center-ui { padding: 10px; }
-        .dice { display: inline-block; width: 70px; height: 70px; background: white; color: black; border-radius: 15px; font-size: 50px; line-height: 70px; margin: 10px; box-shadow: 0 6px #ddd; }
+        .dice { display: inline-block; width: 60px; height: 60px; background: white; color: black; border-radius: 12px; font-size: 40px; line-height: 60px; margin: 5px; box-shadow: 0 5px #ddd; }
         .rolling { animation: shake 0.1s infinite; }
         @keyframes shake { 0% { transform: rotate(5deg); } 50% { transform: rotate(-5deg); } 100% { transform: rotate(5deg); } }
 
-        #roll-btn { background: #3498db; color: white; padding: 15px 45px; border-radius: 40px; border: none; font-size: 20px; font-weight: bold; cursor: pointer; box-shadow: 0 5px #2980b9; }
-        #roll-btn:disabled { opacity: 0.2; cursor: not-allowed; box-shadow: none; transform: translateY(3px); }
+        #roll-btn { background: #3498db; color: white; padding: 12px 35px; border-radius: 35px; border: none; font-size: 18px; font-weight: bold; cursor: pointer; }
+        #roll-btn:disabled { opacity: 0.2; transform: translateY(3px); }
 
-        #win-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 200; flex-direction: column; align-items: center; justify-content: center; }
+        #win-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 200; flex-direction: column; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
 
 <div id="login-screen">
-    <h2>🎲 Shut the Box Online</h2>
-    <input type="text" id="user-name" placeholder="Pahila Name Lekhnu">
-    <input type="text" id="room-id" placeholder="Room ID (e.g. 111)">
-    <button onclick="joinGame()" style="padding:15px 40px; background:#2ecc71; border:none; border-radius:10px; color:white; font-weight:bold; cursor:pointer; margin-top:10px;">ROOM MA XIRNE</button>
+    <h2>🎲 Shut the Box (1-10)</h2>
+    <input type="text" id="user-name" placeholder="Name">
+    <input type="text" id="room-id" placeholder="Room ID">
+    <button onclick="joinGame()" style="padding:15px 40px; background:#2ecc71; border:none; border-radius:10px; color:white; font-weight:bold; cursor:pointer;">START</button>
 </div>
 
 <div id="win-overlay">
     <div style="background:#222; padding:40px; border-radius:20px; border:3px solid #00ff00;">
         <h1 id="winner-name" style="color:#00ff00;">WINNER!</h1>
-        <button onclick="location.reload()" style="padding:10px 20px; border-radius:10px; border:none; cursor:pointer;">FERI KHELNE</button>
+        <button onclick="resetRoomAfterWin()" style="padding:10px 20px; background:#2ecc71; color:white; border:none; border-radius:8px; cursor:pointer;">NEW GAME</button>
     </div>
 </div>
 
 <div class="board">
     <div id="p2-area" class="card-row p2"></div>
-
     <div class="center-ui">
-        <div id="status" style="font-size:1.1rem; color:#2ecc71; height:30px; margin-bottom:5px;">Connecting...</div>
+        <div id="status" style="font-size:1.1rem; color:#2ecc71; margin-bottom:5px;">Join a Room...</div>
         <div id="dice-container">
             <div id="d1" class="dice">⚀</div>
             <div id="d2" class="dice">⚀</div>
         </div>
-        <p style="margin:5px 0;">Target: <b id="target">0</b> | Selected: <b id="sum">0</b></p>
+        <p>Target: <b id="target">0</b> | Sum: <b id="sum">0</b></p>
         <button id="roll-btn" onclick="roll()">ROLL</button>
     </div>
-
     <div id="p1-area" class="card-row p1"></div>
 </div>
 
-<audio id="dice-sound" src="https://cdn.discordapp.com/attachments/1420003318096461825/1459851313398546472/dice-roll-sound.mp3?ex=6964c7fb&is=6963767b&hm=1203edb109f203488d0270c0ca850004232fb9dfc79017557facab533008367d&"></audio>
+<audio id="dice-sound" src="https://www.soundjay.com/board-games/sounds/dice-roll-1.mp3"></audio>
 
 <script>
-    // FIREBASE SETUP: Replace with your own config
-    const firebaseConfig = { apiKey: "AIzaSyDKKAxKTFJcMDmj6j21nKHwlSpwAxsw57k",
+    // Firebase Config
+    const firebaseConfig = {  apiKey: "AIzaSyDKKAxKTFJcMDmj6j21nKHwlSpwAxsw57k",
   authDomain: "call-breke.firebaseapp.com",
   databaseURL: "https://call-breke-default-rtdb.firebaseio.com",
   projectId: "call-breke",
@@ -96,106 +88,92 @@
     function joinGame() {
         myName = document.getElementById('user-name').value;
         roomID = document.getElementById('room-id').value;
-        if(!myName || !roomID) return alert("Details halnuhos!");
-        
+        if(!myName || !roomID) return alert("All fields are required!");
         db = firebase.database().ref('rooms/' + roomID);
         document.getElementById('login-screen').style.display = 'none';
         
         db.child('players_count').transaction(c => (c || 0) + 1, (err, committed, snap) => {
             myRole = snap.val();
+            if(myRole === 1) db.update({ gameStarted: false, target: 0, p1_shut: "", p2_shut: "", toss_p1: 0, toss_p2: 0, d1: 1, d2: 1 });
             if(myRole > 2) { alert("Room Full!"); location.reload(); }
             initGame();
         });
+        db.child('players_count').onDisconnect().transaction(c => (c > 0 ? c - 1 : 0));
     }
 
     function initGame() {
         const rows = [document.getElementById('p1-area'), document.getElementById('p2-area')];
         rows.forEach((row, p) => {
             row.innerHTML = '';
-            for(let i=1; i<=12; i++) row.innerHTML += `<div class="card" id="p${p+1}-c-${i}" onclick="selectCard(${p+1}, ${i})">${i}</div>`;
+            for(let i=1; i<=10; i++) row.innerHTML += `<div class="card" id="p${p+1}-c-${i}" onclick="selectCard(${p+1}, ${i})">${i}</div>`;
         });
-
-        db.on('value', snap => {
-            const data = snap.val() || {};
-            handleGameState(data);
-        });
+        db.on('value', snap => handleGameState(snap.val() || {}));
     }
 
     function handleGameState(data) {
-        const pCount = data.players_count || 0;
         const rollBtn = document.getElementById('roll-btn');
-        
-        if(pCount < 2) {
+        if((data.players_count || 0) < 2) {
             document.getElementById('status').innerText = "Waiting for Player 2...";
             rollBtn.disabled = true;
             return;
         }
 
-        // TOSS PHASE
         if(!data.gameStarted) {
-            const p1Toss = data.toss_p1 || 0;
-            const p2Toss = data.toss_p2 || 0;
-
-            if (p1Toss === 0 && p2Toss === 0) {
-                document.getElementById('status').innerText = "Toss: Player 1 Roll garnuhos!";
+            const p1 = data.toss_p1 || 0, p2 = data.toss_p2 || 0;
+            if(p1 === 0 && p2 === 0) {
+                document.getElementById('status').innerText = "Toss: Player1 Roll!";
                 rollBtn.disabled = (myRole !== 1);
-            } else if (p1Toss > 0 && p2Toss === 0) {
-                document.getElementById('status').innerText = "Player 2 ko palo (Toss)!";
+            } else if(p1 > 0 && p2 === 0) {
+                document.getElementById('status').innerText = "Toss: Player2 Roll!";
                 rollBtn.disabled = (myRole !== 2);
-            } else if (p1Toss > 0 && p2Toss > 0) {
-                const winner = p1Toss >= p2Toss ? 1 : 2;
-                document.getElementById('status').innerText = `Toss Winner: Player ${winner}! Game Suru...`;
-                rollBtn.disabled = true;
-                if(myRole === 1) {
-                    setTimeout(() => {
-                        db.update({ gameStarted: true, turn: winner, target: 0, p1_shut: "", p2_shut: "", toss_p1: null, toss_p2: null });
-                    }, 2000);
+            } else if(p1 > 0 && p2 > 0) {
+                if(p1 === p2) {
+                    document.getElementById('status').innerText = "Draw! Re-rolling...";
+                    if(myRole === 1) setTimeout(() => db.update({ toss_p1: 0, toss_p2: 0 }), 1500);
+                } else {
+                    const starter = p1 > p2 ? 1 : 2;
+                    document.getElementById('status').innerText = `P${starter} Wins Toss!`;
+                    if(myRole === 1) setTimeout(() => db.update({ gameStarted: true, turn: starter }), 1500);
                 }
             }
             return;
         }
 
-        // GAME PHASE
         const isMyTurn = data.turn === myRole;
-        document.getElementById('status').innerText = isMyTurn ? "TAPAI KO PALO!" : "Opponent Turn......";
+        document.getElementById('status').innerText = isMyTurn ? "YOUR TURN!" : "Opponent Turn...";
         rollBtn.disabled = !isMyTurn || data.target > 0;
         document.getElementById('target').innerText = data.target;
 
-        // GLOW EFFECT BASED ON TURN
         document.getElementById('p1-area').className = "card-row p1 " + (data.turn === 1 ? "glow-p1" : "");
         document.getElementById('p2-area').className = "card-row p2 " + (data.turn === 2 ? "glow-p2" : "");
-
         document.getElementById('d1').innerText = emojis[(data.d1 || 1)-1];
         document.getElementById('d2').innerText = emojis[(data.d2 || 1)-1];
 
         [1,2].forEach(p => {
             const shutArr = (data[`p${p}_shut`] || "").split(',').filter(x => x);
-            if(shutArr.length === 12) {
+            if(shutArr.length === 10) {
                 document.getElementById('win-overlay').style.display = 'flex';
                 document.getElementById('winner-name').innerText = "PLAYER " + p + " WINS!";
             }
-            for(let i=1; i<=12; i++) {
+            for(let i=1; i<=10; i++) {
                 const el = document.getElementById(`p${p}-c-${i}`);
                 el.classList.remove('shut', 'selected');
                 if(shutArr.includes(i.toString())) el.classList.add('shut');
             }
         });
-
         if(isMyTurn && data.target > 0) checkPass(data);
     }
 
     function roll() {
         document.getElementById('dice-sound').play();
-        const d1 = document.getElementById('d1'); const d2 = document.getElementById('d2');
-        d1.classList.add('rolling'); d2.classList.add('rolling');
-
+        document.getElementById('d1').classList.add('rolling');
+        document.getElementById('d2').classList.add('rolling');
         setTimeout(() => {
-            const v1 = Math.floor(Math.random() * 6) + 1;
-            const v2 = Math.floor(Math.random() * 6) + 1;
-            d1.classList.remove('rolling'); d2.classList.remove('rolling');
-            
+            const v1 = Math.floor(Math.random() * 6) + 1, v2 = Math.floor(Math.random() * 6) + 1;
+            document.getElementById('d1').classList.remove('rolling');
+            document.getElementById('d2').classList.remove('rolling');
             db.once('value', s => {
-                const data = s.val() || {};
+                const data = s.val();
                 if(!data.gameStarted) db.update({ [`toss_p${myRole}`]: v1+v2, d1: v1, d2: v2 });
                 else db.update({ d1: v1, d2: v2, target: v1+v2 });
             });
@@ -206,16 +184,13 @@
         if(p !== myRole) return;
         const el = document.getElementById(`p${p}-c-${n}`);
         if(el.classList.contains('shut')) return;
-
         el.classList.toggle('selected');
         const sel = document.querySelectorAll(`.p${myRole} .selected`);
-        let currentSum = 0; let nums = [];
-        sel.forEach(c => { currentSum += parseInt(c.innerText); nums.push(c.innerText); });
-        document.getElementById('sum').innerText = currentSum;
-
+        let sum = 0, nums = [];
+        sel.forEach(c => { sum += parseInt(c.innerText); nums.push(c.innerText); });
+        document.getElementById('sum').innerText = sum;
         db.once('value', s => {
-            const target = s.val().target;
-            if(currentSum === target && target > 0) setTimeout(() => finalizeMove(nums), 300);
+            if(sum === s.val().target && s.val().target > 0) setTimeout(() => finalizeMove(nums), 300);
         });
     }
 
@@ -229,19 +204,35 @@
         });
     }
 
-    function checkPass(data) {
+    function resetRoomAfterWin() {
+        db.update({ gameStarted: false, p1_shut: "", p2_shut: "", toss_p1: 0, toss_p2: 0, target: 0 }).then(() => location.reload());
+    }
+
+   function checkPass(data) {
         let available = [];
-        for(let i=1; i<=12; i++) if(!document.getElementById(`p${myRole}-c-${i}`).classList.contains('shut')) available.push(i);
+        // 10 cards ko lagi check garne
+        for(let i=1; i<=10; i++) {
+            if(!document.getElementById(`p${myRole}-c-${i}`).classList.contains('shut')) {
+                available.push(i);
+            }
+        }
+
+        // Subset Sum Logic: Can we make the target?
         const canWork = (arr, n, target) => {
             if (target == 0) return true;
             if (n == 0) return false;
             if (arr[n - 1] > target) return canWork(arr, n - 1, target);
             return canWork(arr, n - 1, target) || canWork(arr, n - 1, target - arr[n - 1]);
         };
+
+        // Yadi move sambhab chhaina bhane:
         if(!canWork(available, available.length, data.target)) {
-            setTimeout(() => db.update({ target: 0, turn: myRole === 1 ? 2 : 1 }), 2500);
+            document.getElementById('status').innerText = "No moves! Passing...";
+            // Aba 1 second (1000ms) mai palo sarchha
+            setTimeout(() => {
+                db.update({ target: 0, turn: myRole === 1 ? 2 : 1 });
+            }, 1000); 
         }
-    }
-</script>
+    }</script>
 </body>
 </html>
