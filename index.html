@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Shut the Box - Smart Online</title>
+    <title>Shut the Box Online - Pro</title>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
     <style>
@@ -16,24 +16,21 @@
         .board { display: flex; flex-direction: column; justify-content: space-between; height: 100vh; padding: 10px; box-sizing: border-box; }
         .card-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; max-width: 400px; margin: 0 auto; }
         
-        .card { 
-            height: 80px; background: #fff; color: #000; border-radius: 12px; 
-            display: flex; align-items: center; justify-content: center; 
-            font-weight: bold; font-size: 24px; box-shadow: 0 5px #bbb; transition: 0.2s;
-        }
+        .card { height: 75px; background: #fff; color: #000; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 24px; box-shadow: 0 5px #bbb; transition: 0.2s; }
         .p1 .card { background: var(--p1); color: white; }
         .p2 .card { background: var(--p2); color: #000; }
         
         .selected { transform: translateY(-8px); border: 4px solid #00ff00; box-shadow: 0 0 20px #00ff00; }
-        .shut { opacity: 0.05; transform: scale(0.8); pointer-events: none; }
+        .shut { opacity: 0.05 !important; transform: scale(0.8); pointer-events: none; }
 
-        .dice { display: inline-block; width: 70px; height: 70px; background: white; color: black; border-radius: 15px; font-size: 50px; line-height: 70px; margin: 10px; box-shadow: 0 6px #ddd; }
+        .dice { display: inline-block; width: 70px; height: 70px; background: white; color: black; border-radius: 15px; font-size: 50px; line-height: 70px; margin: 10px; box-shadow: 0 6px #ddd; position: relative; }
         .rolling { animation: shake 0.1s infinite; }
         @keyframes shake { 0% { transform: rotate(5deg); } 50% { transform: rotate(-5deg); } 100% { transform: rotate(5deg); } }
 
-        .info-panel { background: rgba(255,255,255,0.1); padding: 10px; border-radius: 15px; margin: 10px 0; }
-        #roll-btn { background: #3498db; color: white; padding: 20px 40px; border-radius: 40px; border: none; font-size: 20px; font-weight: bold; box-shadow: 0 6px #2980b9; }
-        #roll-btn:disabled { opacity: 0.3; box-shadow: none; transform: translateY(4px); }
+        #roll-btn { background: #3498db; color: white; padding: 15px 40px; border-radius: 40px; border: none; font-size: 20px; font-weight: bold; cursor: pointer; }
+        #roll-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        #win-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 200; flex-direction: column; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
@@ -42,20 +39,27 @@
     <h2>🎲 Shut the Box Online</h2>
     <input type="text" id="user-name" placeholder="Tapai ko Name">
     <input type="text" id="room-id" placeholder="Room ID">
-    <button onclick="joinGame()" style="padding:15px 40px; background:#2ecc71; border:none; border-radius:10px; color:white; font-weight:bold;">KHELNA SURU GARNE</button>
+    <button onclick="joinGame()" style="padding:15px 40px; background:#2ecc71; border:none; border-radius:10px; color:white; font-weight:bold; cursor:pointer;">START GAME</button>
+</div>
+
+<div id="win-overlay">
+    <div style="background:#222; padding:40px; border-radius:20px; border:3px solid #00ff00;">
+        <h1 id="winner-name" style="color:#00ff00;">WINNER!</h1>
+        <button onclick="location.reload()" style="padding:10px 20px; border-radius:10px; border:none; cursor:pointer;">NEW GAME</button>
+    </div>
 </div>
 
 <div class="board">
     <div id="p2-area" class="card-row p2"></div>
 
-    <div class="info-panel">
-        <div id="status">Waiting for players...</div>
+    <div class="center-ui">
+        <div id="status" style="font-size:1.1rem; color:#2ecc71; margin-bottom:5px;">Connecting...</div>
         <div id="dice-container">
             <div id="d1" class="dice">⚀</div>
             <div id="d2" class="dice">⚀</div>
         </div>
-        <p>Target: <span id="target">0</span> | Selected: <span id="sum">0</span></p>
-        <button id="roll-btn" onclick="roll()">ROLL DICE</button>
+        <p>Target: <span id="target">0</span> | Total: <span id="sum">0</span></p>
+        <button id="roll-btn" onclick="roll()">ROLL</button>
     </div>
 
     <div id="p1-area" class="card-row p1"></div>
@@ -64,7 +68,7 @@
 <audio id="dice-sound" src="https://www.soundjay.com/board-games/sounds/dice-roll-1.mp3"></audio>
 
 <script>
-    // Firebase Config (Replace with yours)
+    // Firebase Config (Yasma tapai ko details halnuhos)
     const firebaseConfig = { apiKey: "AIzaSyDKKAxKTFJcMDmj6j21nKHwlSpwAxsw57k",
   authDomain: "call-breke.firebaseapp.com",
   databaseURL: "https://call-breke-default-rtdb.firebaseio.com",
@@ -75,48 +79,87 @@
   measurementId: "G-V2D55S47QV" };
     firebase.initializeApp(firebaseConfig);
     let db, myRole, myName, roomID;
+    const emojis = ['⚀','⚁','⚂','⚃','⚄','⚅'];
 
     function joinGame() {
         myName = document.getElementById('user-name').value;
         roomID = document.getElementById('room-id').value;
-        if(!myName || !roomID) return alert("Sabai detail halnuhos!");
+        if(!myName || !roomID) return alert("Fill all fields!");
         
         db = firebase.database().ref('rooms/' + roomID);
         document.getElementById('login-screen').style.display = 'none';
         
         db.child('players_count').transaction(c => (c || 0) + 1, (err, committed, snap) => {
             myRole = snap.val();
+            if(myRole > 2) { alert("Room Full!"); location.reload(); }
             initGame();
         });
     }
 
     function initGame() {
-        const p1Row = document.getElementById('p1-area');
-        const p2Row = document.getElementById('p2-area');
-        for(let i=1; i<=12; i++) {
-            p1Row.innerHTML += `<div class="card" id="p1-c-${i}" onclick="selectCard(1, ${i})">${i}</div>`;
-            p2Row.innerHTML += `<div class="card" id="p2-c-${i}" onclick="selectCard(2, ${i})">${i}</div>`;
-        }
-        
+        const rows = [document.getElementById('p1-area'), document.getElementById('p2-area')];
+        rows.forEach((row, p) => {
+            row.innerHTML = '';
+            for(let i=1; i<=12; i++) row.innerHTML += `<div class="card" id="p${p+1}-c-${i}" onclick="selectCard(${p+1}, ${i})">${i}</div>`;
+        });
+
         db.on('value', snap => {
             const data = snap.val() || {};
-            if(!data.turn) return db.update({ turn: 1, target: 0, p1_shut: "", p2_shut: "" });
-            render(data);
+            handleGameState(data);
         });
     }
 
-    function render(data) {
+function handleGameState(data) {
+        const pCount = data.players_count || 0;
+        
+        // 1. Waiting for 2 Players
+        if(pCount < 2) {
+            document.getElementById('status').innerText = "Waiting for Player 2 to join...";
+            document.getElementById('roll-btn').disabled = true;
+            return;
+        }
+
+        // 2. Turn Decider (Toss)
+        if(!data.gameStarted) {
+            const p1Toss = data.toss_p1 || 0;
+            const p2Toss = data.toss_p2 || 0;
+
+            if (p1Toss === 0 && p2Toss === 0) {
+                document.getElementById('status').innerText = "Toss: Player 1 Roll garnuhos!";
+                document.getElementById('roll-btn').disabled = (myRole !== 1);
+            } else if (p1Toss > 0 && p2Toss === 0) {
+                document.getElementById('status').innerText = "P1 rolled " + p1Toss + ". Aba Player 2 ko palo!";
+                document.getElementById('roll-btn').disabled = (myRole !== 2);
+            } else if (p1Toss > 0 && p2Toss > 0) {
+                const winner = p1Toss >= p2Toss ? 1 : 2;
+                document.getElementById('status').innerText = `Toss Done! P1: ${p1Toss}, P2: ${p2Toss}. Starter: Player ${winner}`;
+                document.getElementById('roll-btn').disabled = true;
+                
+                // Only Player 1 will trigger the game start to avoid double-triggering
+                if(myRole === 1) {
+                    setTimeout(() => {
+                        db.update({ gameStarted: true, turn: winner, target: 0, p1_shut: "", p2_shut: "", toss_p1: null, toss_p2: null });
+                    }, 2000);
+                }
+            }
+            return;
+        }   
+        // 3. Main Game Logic
         const isMyTurn = data.turn === myRole;
-        document.getElementById('status').innerText = isMyTurn ? "Tapai ko palo!" : "Arko player ko palo...";
+        document.getElementById('status').innerText = isMyTurn ? "Your Turn!" : "Opponent Turn...";
         document.getElementById('roll-btn').disabled = !isMyTurn || data.target > 0;
         document.getElementById('target').innerText = data.target;
 
-        const emojis = ['⚀','⚁','⚂','⚃','⚄','⚅'];
         document.getElementById('d1').innerText = emojis[(data.d1 || 1)-1];
         document.getElementById('d2').innerText = emojis[(data.d2 || 1)-1];
 
         [1,2].forEach(p => {
             const shutArr = (data[`p${p}_shut`] || "").split(',').filter(x => x);
+            if(shutArr.length === 12 && data.gameStarted) {
+                document.getElementById('win-overlay').style.display = 'flex';
+                document.getElementById('winner-name').innerText = "PLAYER " + p + " WINS!";
+                return;
+            }
             for(let i=1; i<=12; i++) {
                 const el = document.getElementById(`p${p}-c-${i}`);
                 el.classList.remove('shut', 'selected');
@@ -124,46 +167,50 @@
             }
         });
 
-        // Smart Pass Check: Yadi move sambhab chhaina bhane auto-pass
-        if(isMyTurn && data.target > 0) {
-            checkPossibleMoves(data);
-        }
+        if(isMyTurn && data.target > 0) checkPass(data);
     }
 
-    function roll() {
-        document.getElementById('dice-sound').play();
+   function roll() {
+        const dSound = document.getElementById('dice-sound');
+        if(dSound) dSound.play();
+        
         document.getElementById('d1').classList.add('rolling');
         document.getElementById('d2').classList.add('rolling');
+        document.getElementById('roll-btn').disabled = true;
 
         setTimeout(() => {
             const v1 = Math.floor(Math.random() * 6) + 1;
             const v2 = Math.floor(Math.random() * 6) + 1;
-            db.update({ d1: v1, d2: v2, target: v1 + v2 });
+            const total = v1 + v2;
+            
             document.getElementById('d1').classList.remove('rolling');
             document.getElementById('d2').classList.remove('rolling');
+
+            db.once('value', s => {
+                const data = s.val() || {};
+                if(!data.gameStarted) {
+                    // Toss Phase
+                    db.update({ [`toss_p${myRole}`]: total, d1: v1, d2: v2 });
+                } else {
+                    // Normal Game Phase
+                    db.update({ d1: v1, d2: v2, target: total });
+                }
+            });
         }, 800);
     }
-
     function selectCard(p, n) {
         if(p !== myRole) return;
-        const card = document.getElementById(`p${p}-c-${n}`);
-        if(card.classList.contains('shut')) return;
+        const el = document.getElementById(`p${p}-c-${n}`);
+        if(el.classList.contains('shut')) return;
 
-        card.classList.toggle('selected');
-        const selected = document.querySelectorAll(`.p${myRole} .selected`);
-        let currentSum = 0;
-        let nums = [];
-        selected.forEach(c => {
-            currentSum += parseInt(c.innerText);
-            nums.push(c.innerText);
-        });
+        el.classList.toggle('selected');
+        const sel = document.querySelectorAll(`.p${myRole} .selected`);
+        let sum = 0, nums = [];
+        sel.forEach(c => { sum += parseInt(c.innerText); nums.push(c.innerText); });
+        document.getElementById('sum').innerText = sum;
 
-        document.getElementById('sum').innerText = currentSum;
-
-        // Auto-Confirm Logic
         db.once('value', s => {
-            const target = s.val().target;
-            if(currentSum === target && target > 0) {
+            if(sum === s.val().target && s.val().target > 0) {
                 setTimeout(() => finalizeMove(nums), 300);
             }
         });
@@ -172,43 +219,26 @@
     function finalizeMove(nums) {
         db.once('value', s => {
             const data = s.val();
-            const oldShut = (data[`p${myRole}_shut`] || "").split(',').filter(x => x);
-            const newShut = [...oldShut, ...nums].join(',');
-            db.update({
-                [`p${myRole}_shut`]: newShut,
-                target: 0,
-                turn: myRole === 1 ? 2 : 1
-            });
+            const old = (data[`p${myRole}_shut`] || "").split(',').filter(x => x);
+            const updated = [...old, ...nums].join(',');
+            db.update({ [`p${myRole}_shut`]: updated, target: 0, turn: myRole === 1 ? 2 : 1 });
             document.getElementById('sum').innerText = "0";
         });
     }
 
-    function checkPossibleMoves(data) {
-        const available = [];
+    function checkPass(data) {
+        let available = [];
         for(let i=1; i<=12; i++) {
-            if(!document.getElementById(`p${myRole}-c-${i}`).classList.contains('shut')) {
-                available.push(i);
-            }
+            if(!document.getElementById(`p${myRole}-c-${i}`).classList.contains('shut')) available.push(i);
         }
-
-        // Simple Subset Sum function check (can we make data.target from available cards?)
-        const canMakeSum = (arr, target) => {
-            let n = arr.length;
-            for (let i = 0; i < (1 << n); i++) {
-                let sum = 0;
-                for (let j = 0; j < n; j++) {
-                    if ((i >> j) & 1) sum += arr[j];
-                }
-                if (sum === target) return true;
-            }
-            return false;
+        const canWork = (arr, n, target) => {
+            if (target == 0) return true;
+            if (n == 0) return false;
+            if (arr[n - 1] > target) return canWork(arr, n - 1, target);
+            return canWork(arr, n - 1, target) || canWork(arr, n - 1, target - arr[n - 1]);
         };
-
-        if(!canMakeSum(available, data.target)) {
-            document.getElementById('status').innerText = "Kunaipani move milena! Auto-passing...";
-            setTimeout(() => {
-                db.update({ target: 0, turn: myRole === 1 ? 2 : 1 });
-            }, 3000);
+        if(!canWork(available, available.length, data.target)) {
+            setTimeout(() => { db.update({ target: 0, turn: myRole === 1 ? 2 : 1 }); }, 2500);
         }
     }
 </script>
