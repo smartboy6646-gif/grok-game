@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Shut the Box - Hard Mode Edition</title>
+    <title>Shut the Box - Pro Edition</title>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
     <style>
@@ -20,9 +20,13 @@
             transition: 0.5s; border: 2px solid transparent;
         }
         
+        /* Turn Glows */
         .glow-p1 { border-color: var(--p1); box-shadow: 0 0 20px rgba(255, 71, 87, 0.4); background: rgba(255, 71, 87, 0.05); }
         .glow-p2 { border-color: var(--p2); box-shadow: 0 0 20px rgba(241, 196, 15, 0.4); background: rgba(241, 196, 15, 0.05); }
-        .hard-active { border: 2px dashed var(--hard) !important; box-shadow: 0 0 15px var(--hard) !important; }
+        
+        /* Hard Mode Turn Glow */
+        .hard-turn-p1 { border: 2px dashed var(--hard); box-shadow: 0 0 20px var(--hard); background: rgba(155, 89, 182, 0.1); }
+        .hard-turn-p2 { border: 2px dashed var(--hard); box-shadow: 0 0 20px var(--hard); background: rgba(155, 89, 182, 0.1); }
 
         .card { height: 70px; background: #fff; color: #000; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 22px; box-shadow: 0 4px #bbb; transition: 0.2s; }
         .p1 .card { background: var(--p1); color: white; }
@@ -47,7 +51,7 @@
 
 <div id="login-screen">
     <h2>🎲 Shut the Box (1-10)</h2>
-    <input type="text" id="user-name" placeholder="Tapai ko Name">
+    <input type="text" id="user-name" placeholder="Name">
     <input type="text" id="room-id" placeholder="Room ID">
     <button onclick="joinGame()" style="padding:15px 40px; background:#2ecc71; border:none; border-radius:10px; color:white; font-weight:bold;">START</button>
 </div>
@@ -63,7 +67,7 @@
     <div id="p2-area" class="card-row p2"></div>
     <div class="center-ui">
         <button id="hard-mode-btn" onclick="toggleHardMode()">HARD MODE: OFF</button>
-        <div id="status" style="font-size:1rem; color:#2ecc71; margin-bottom:5px; height:20px;">Lobby...</div>
+        <div id="status" style="font-size:0.9rem; color:#2ecc71; margin-bottom:5px; min-height:40px;">Lobby...</div>
         <div id="dice-container">
             <div id="d1" class="dice">⚀</div>
             <div id="d2" class="dice">⚀</div>
@@ -74,17 +78,17 @@
     <div id="p1-area" class="card-row p1"></div>
 </div>
 
-<audio id="dice-sound" src="https://cdn.discordapp.com/attachments/1420003318096461825/1459851313398546472/dice-roll-sound.mp3?ex=6964c7fb&is=6963767b&hm=1203edb109f203488d0270c0ca850004232fb9dfc79017557facab533008367d&"></audio>
+<audio id="dice-sound" src="https://www.soundjay.com/board-games/sounds/dice-roll-1.mp3"></audio>
 
 <script>
-    const firebaseConfig = { apiKey: "AIzaSyDKKAxKTFJcMDmj6j21nKHwlSpwAxsw57k",
-  authDomain: "call-breke.firebaseapp.com",
-  databaseURL: "https://call-breke-default-rtdb.firebaseio.com",
-  projectId: "call-breke",
-  storageBucket: "call-breke.firebasestorage.app",
-  messagingSenderId: "908751603046",
-  appId: "1:908751603046:web:fd30e07b9e6400b35c74a7",
-  measurementId: "G-V2D55S47QV" };
+    const firebaseConfig = { apiKey: "AIzaSyDT6QJyFjZhjrCd-7d00IxFSlWqOBp2xY8",
+  authDomain: "poison-and-save.firebaseapp.com",
+  databaseURL: "https://poison-and-save-default-rtdb.firebaseio.com",
+  projectId: "poison-and-save",
+  storageBucket: "poison-and-save.firebasestorage.app",
+  messagingSenderId: "475847800468",
+  appId: "1:475847800468:web:93605c30c6c6c775e2a681",
+  measurementId: "G-VR6WKKB1DV" };
     firebase.initializeApp(firebaseConfig);
     let db, myRole, roomID;
     const emojis = ['⚀','⚁','⚂','⚃','⚄','⚅'];
@@ -92,12 +96,12 @@
     function joinGame() {
         const name = document.getElementById('user-name').value;
         roomID = document.getElementById('room-id').value;
-        if(!name || !roomID) return alert("All fields required!");
+        if(!name || !roomID) return alert("Required!");
         db = firebase.database().ref('rooms/' + roomID);
         document.getElementById('login-screen').style.display = 'none';
         db.child('players_count').transaction(c => (c || 0) + 1, (err, committed, snap) => {
             myRole = snap.val();
-            if(myRole === 1) db.update({ gameStarted: false, hardMode: false, p1_shut: "", p2_shut: "", toss_p1: 0, toss_p2: 0 });
+            if(myRole === 1) db.update({ gameStarted: false, hardMode: false, p1_shut: "", p2_shut: "", toss_p1: 0, toss_p2: 0, d1: 1, d2: 1 });
             initGame();
         });
         db.child('players_count').onDisconnect().transaction(c => (c > 0 ? c - 1 : 0));
@@ -105,8 +109,9 @@
 
     function toggleHardMode() {
         db.once('value', s => {
-            const current = s.val().hardMode || false;
-            db.update({ hardMode: !current });
+            const data = s.val();
+            if(data.gameStarted) return alert("Game bich ma mode change garna mildaina!");
+            db.update({ hardMode: !data.hardMode });
         });
     }
 
@@ -123,14 +128,8 @@
         const rollBtn = document.getElementById('roll-btn');
         const hmBtn = document.getElementById('hard-mode-btn');
         
-        // Update Hard Mode Button UI
-        if(data.hardMode) {
-            hmBtn.innerText = "HARD MODE: ON 🔥";
-            hmBtn.classList.add('active');
-        } else {
-            hmBtn.innerText = "HARD MODE: OFF";
-            hmBtn.classList.remove('active');
-        }
+        hmBtn.innerText = data.hardMode ? "HARD MODE: ON 🔥" : "HARD MODE: OFF";
+        data.hardMode ? hmBtn.classList.add('active') : hmBtn.classList.remove('active');
 
         if((data.players_count || 0) < 2) {
             document.getElementById('status').innerText = "Waiting for P2...";
@@ -138,25 +137,39 @@
             return;
         }
 
+        // TOSS PHASE WITH SCORE FIX
         if(!data.gameStarted) {
             const p1 = data.toss_p1 || 0, p2 = data.toss_p2 || 0;
-            if(p1 === 0 || p2 === 0) {
-                document.getElementById('status').innerText = "Toss Phase...";
-                rollBtn.disabled = (p1 > 0 && myRole === 1) || (p2 > 0 && myRole === 2) || (myRole === 1 && p1 === 0 ? false : (myRole === 2 && p1 > 0 ? false : true));
-            } else {
-                if(p1 === p2) { if(myRole === 1) db.update({ toss_p1: 0, toss_p2: 0 }); }
-                else { if(myRole === 1) setTimeout(() => db.update({ gameStarted: true, turn: p1 > p2 ? 1 : 2 }), 1000); }
+            if(p1 === 0 && p2 === 0) {
+                document.getElementById('status').innerHTML = "Toss Phase<br>P1 ko palo roll garne";
+                rollBtn.disabled = (myRole !== 1);
+            } else if(p1 > 0 && p2 === 0) {
+                document.getElementById('status').innerHTML = `P1 ले ${p1} ल्यायो<br>Aba P2 ko palo`;
+                rollBtn.disabled = (myRole !== 2);
+            } else if(p1 > 0 && p2 > 0) {
+                if(p1 === p2) {
+                    document.getElementById('status').innerHTML = `Draw (${p1}=${p2})<br>Feri Roll garnuhos!`;
+                    if(myRole === 1) setTimeout(() => db.update({ toss_p1: 0, toss_p2: 0 }), 1500);
+                } else {
+                    const starter = p1 > p2 ? 1 : 2;
+                    document.getElementById('status').innerHTML = `P1: ${p1} | P2: ${p2}<br>Starter: Player ${starter}`;
+                    if(myRole === 1) setTimeout(() => db.update({ gameStarted: true, turn: starter }), 2000);
+                }
             }
             return;
         }
 
+        // MAIN GAME HIGHLIGHT FIX
         const isMyTurn = data.turn === myRole;
-        document.getElementById('status').innerText = isMyTurn ? "YOUR TURN" : "Opponent's Turn";
+        document.getElementById('status').innerText = isMyTurn ? "TAPAI KO PALO" : "Opponent kheldai chha...";
         rollBtn.disabled = !isMyTurn || data.target > 0;
         
-        document.getElementById('p1-area').className = `card-row p1 ${data.turn === 1 ? 'glow-p1' : ''} ${data.hardMode ? 'hard-active' : ''}`;
-        document.getElementById('p2-area').className = `card-row p2 ${data.turn === 2 ? 'glow-p2' : ''} ${data.hardMode ? 'hard-active' : ''}`;
-        
+        // Highlight logic
+        const p1Class = `card-row p1 ${data.turn === 1 ? (data.hardMode ? 'hard-turn-p1' : 'glow-p1') : ''}`;
+        const p2Class = `card-row p2 ${data.turn === 2 ? (data.hardMode ? 'hard-turn-p2' : 'glow-p2') : ''}`;
+        document.getElementById('p1-area').className = p1Class;
+        document.getElementById('p2-area').className = p2Class;
+
         document.getElementById('d1').innerText = emojis[(data.d1 || 1)-1];
         document.getElementById('d2').innerText = emojis[(data.d2 || 1)-1];
         document.getElementById('target').innerText = data.target;
@@ -203,57 +216,40 @@
         db.once('value', s => { if(sum === s.val().target && s.val().target > 0) finalizeMove(nums); });
     }
 
-function finalizeMove(nums) {
+    function finalizeMove(nums) {
         db.once('value', s => {
             const data = s.val();
             const old = (data[`p${myRole}_shut`] || "").split(',').filter(x => x);
             const newShut = [...old, ...nums].join(',');
+            let updates = { [`p${myRole}_shut`]: newShut, target: 0 };
             
-            let updates = { 
-                [`p${myRole}_shut`]: newShut, 
-                target: 0 
-            };
-
-            // LOGIC FIX: 
-            // Yadi Hard Mode OFF chha bhane turn change garne (Normal Mode)
-            // Yadi Hard Mode ON chha bhane turn change nagarne (Repeat Roll)
-            if (!data.hardMode) {
-                updates.turn = (myRole === 1 ? 2 : 1);
-            }
-
+            // NORMAL MODE ma turn change, HARD MODE ma repeat roll
+            if (!data.hardMode) updates.turn = (myRole === 1 ? 2 : 1);
+            
             db.update(updates);
             document.getElementById('sum').innerText = "0";
         });
     }
-  function checkPass(data) {
+
+    function checkPass(data) {
         let avail = [];
         for(let i=1; i<=10; i++) if(!document.getElementById(`p${myRole}-c-${i}`).classList.contains('shut')) avail.push(i);
-        
         const canWork = (arr, n, target) => {
             if (target == 0) return true;
             if (n == 0) return false;
             if (arr[n - 1] > target) return canWork(arr, n - 1, target);
             return canWork(arr, n - 1, target) || canWork(arr, n - 1, target - arr[n - 1]);
         };
-
         if(!canWork(avail, avail.length, data.target)) {
-            document.getElementById('status').innerText = data.hardMode ? "Hard Mode Fail! Resetting..." : "No moves! Passing...";
-            
+            document.getElementById('status').innerText = data.hardMode ? "FAILED! Resetting..." : "No moves! Passing...";
             setTimeout(() => {
-                let updates = { 
-                    target: 0, 
-                    turn: (myRole === 1 ? 2 : 1) // Move fail bhayesi dubai mode ma turn sarchha
-                };
-
-                // Hard mode ma fail bhayo bhane cards reset garne
-                if(data.hardMode) {
-                    updates[`p${myRole}_shut`] = ""; 
-                }
-
+                let updates = { target: 0, turn: (myRole === 1 ? 2 : 1) };
+                if(data.hardMode) updates[`p${myRole}_shut`] = ""; 
                 db.update(updates);
-            }, 1000);
+            }, 1200);
         }
     }
+
     function resetRoomAfterWin() {
         db.update({ gameStarted: false, p1_shut: "", p2_shut: "", target: 0, toss_p1: 0, toss_p2: 0 }).then(() => location.reload());
     }
